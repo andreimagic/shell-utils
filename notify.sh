@@ -1,5 +1,5 @@
 #!/bin/bash
-version="SCript by AndreiMagic, last revision 05.09.2017"
+version="SCript by AndreiMagic, last revision 19.12.2017"
 DATE=$(date)
 
 # Notification services credentials
@@ -11,14 +11,19 @@ DATE=$(date)
 # mailgun_key="key-b0...x12"
 # mailgun_domain="sandboxc894....mailgun.org"
 
-if [[ ! $pushover_token ]] || [[ ! $pushover_user ]] || [[ ! $mailgun_key ]] || [[ ! $mailgun_domain ]]; then
-    echo -e "Notification services credentials missing!\n\n<pushover_token, pushover_user, mailgun_key, mailgun_domain>"
-    echo -e "Must be declared using 'export variable=\"value\"'\n(or uncomment them in the script)"
-    # exit 1
-fi
-
 # Pushover Notifications
 function pushover() {
+    if [[ ! $pushover_token ]] || [[ ! $pushover_user ]]; then
+        echo -e "Notification services credentials missing!\n\n<pushover_token, pushover_user>"
+        echo -e "Must be declared using 'export variable=\"value\"'\n(or uncomment them in the script)"
+        exit 1
+    fi
+
+    if [[ ! $push_subject ]] || [[ ! $push_text ]] || [[ ! $push_priority ]]; then
+        echo -e "All notification service parameters are mandatory!"
+        exit 1
+    fi
+
     curl -s -F "token=${pushover_token}" \
     -F "user=${pushover_user}" \
     -F "title=${push_subject}" \
@@ -29,6 +34,17 @@ function pushover() {
 
 # Pushover Glances
 function glances() {
+    if [[ ! $pushover_token ]] || [[ ! $pushover_user ]]; then
+        echo -e "Notification services credentials missing!\n\n<pushover_token, pushover_user>"
+        echo -e "Must be declared using 'export variable=\"value\"'\n(or uncomment them in the script)"
+        exit 1
+    fi
+
+    if [[ ! $glance_title ]] || [[ ! $glance_text ]] || [[ ! $glance_subtext ]] || [[ ! $glance_count ]] || [[ ! $glance_percent ]]; then
+        echo -e "All notification service parameters are mandatory!"
+        exit 1
+    fi
+
     if [[ ${glance_title} ]]; then glance_title="title=${glance_title}"; fi
     if [[ ${glance_text} ]]; then glance_text="text=${glance_text}"; fi
     if [[ ${glance_subtext} ]]; then glance_subtext="subtext=${glance_subtext}"; fi
@@ -40,6 +56,17 @@ function glances() {
 
 # Mailgun Notifications (multiple recipients comma separated)
 function mailgun() {
+    if [[ ! $mailgun_key ]] || [[ ! $mailgun_domain ]]; then
+        echo -e "Notification services credentials missing!\n<mailgun_key, mailgun_domain>"
+        echo -e "Must be declared using 'export variable=\"value\"'\n(or uncomment them in the script)"
+        exit 1
+    fi
+
+    if [[ ! $mail_recipients ]] || [[ ! $mail_subject ]] || [[ ! $mail_text ]]; then
+        echo -e "All notification service parameters are mandatory!"
+        exit 1
+    fi
+
     curl -s --user "api:${mailgun_key}" \
     https://api.mailgun.net/v3/${mailgun_domain}/messages \
     -F from="Mailgun Script <mailgun@${mailgun_domain}>" \
@@ -48,15 +75,28 @@ function mailgun() {
     -F text="${mail_text}"
 }
 
+# Mailgun Notifications (multiple recipients comma separated)
+function slack() {
+    if [[ ! $slack_webhook ]] || [[ ! $slack_username ]] || [[ ! $slack_channel ]] || [[ ! $slack_text ]]; then
+        echo -e "All notification service parameters are mandatory!\n<slack_webhook, slack_channel, slack_username, slack_text>"
+        exit 1
+    fi
+
+    json="{\"channel\": \"$slack_channel\", \"username\":\"$slack_username\", \"icon_emoji\":\"ghost\", \"attachments\":[{\"color\":\"danger\" , \"text\": \"$slack_text\"}]}"
+    curl --data "payload=$json" "$slack_webhook"
+}
+
 function help() {
     echo -e "Useage: $0 option"
-	echo -e "\n  Options are:"
+    echo -e "\n  Options are:"
     printf "%-60s%-30s\n" "  --mailgun" "# email"
     printf "%-60s\n" "    -s|--subject -m|--message -r|--recipients"
     printf "%-60s%-30s\n" "  --pushover" "# push notification"
     printf "%-60s\n" "    -s|--subject -m|--message -p|--priority"
     printf "%-60s%-30s\n" "  --glances" "# push stats to watchOS"
     printf "%-60s\n" "    -t|--title -m|--message -s|--subtext -c|--count -%|--percent"
+    printf "%-60s%-30s\n" "  --slack" "# push messages to Slack"
+    printf "%-60s\n" "    -w|--webhook -c|--channel -u|--username -m|--message"
     printf "%-60s%-30s\n" "  -h|--help" "# display this help message"
     echo -e "\nNOTE: Notification services credentials\n<pushover_token, pushover_user, mailgun_key, mailgun_domain>"
     echo -e "must be declared using 'export variable=\"value\"' (or add them in the script header)"
@@ -89,6 +129,7 @@ if (( $# >= 1 )); then
                 mail_text="$2"
                 push_text="$2"
                 glance_text="$2"
+                slack_text="$2"
                 shift # past argument
                 ;;
             -r|--recipients)
@@ -103,12 +144,21 @@ if (( $# >= 1 )); then
                 glance_title="$2"
                 shift # past argument
                 ;;
-            -c|--count)
+            -c|--count|--channel)
                 glance_count="$2"
+                slack_channel="$2"
                 shift # past argument
                 ;;
             -%|--percent)
                 glance_percent="$2"
+                shift # past argument
+                ;;
+            -u|--username)
+                slack_username="$2"
+                shift # past argument
+                ;;
+            -w|--webhook)
+                slack_webhook="$2"
                 shift # past argument
                 ;;
             --mailgun)
@@ -119,6 +169,9 @@ if (( $# >= 1 )); then
                 ;;
             --glances)
                 run="glances"
+                ;;
+            --slack)
+                run="slack"
                 ;;
             -h|--help)
                 help
@@ -133,8 +186,8 @@ if (( $# >= 1 )); then
     echo Running: $run
     $run
 elif (( $# == 0 )); then
-	help
+    help
 else
-	echo -e "Incorrect syntax!"
+    echo -e "Incorrect syntax!"
     help
 fi

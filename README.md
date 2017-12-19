@@ -5,7 +5,8 @@ This is a shell script tool used for sending push notifications or email notific
 Integrated with:
  * [Pushover](https://pushover.net) for instant notifications
  * [Pushover Glances](https://pushover.net/api/glances) (for Apple Watch or Android)
- * [Mailgun](https://www.mailgun.com) for emails 
+ * [Mailgun](https://www.mailgun.com) for emails
+ * [Slack](https://slack.com) messages using WebHooks
 
  ---
 
@@ -19,6 +20,8 @@ Integrated with:
 		    -s|--subject -m|--message -p|--priority
 		  --glances                                                 # push stats to watchOS
 		    -t|--title -m|--message -s|--subtext -c|--count -%|--percent
+		  --slack                                                   # push messages to Slack
+		    -w|--webhook -c|--channel -u|--username -m|--message
 		  -h|--help                                                 # display this help message
 
 		NOTE: Notification services credentials
@@ -30,6 +33,7 @@ Shell Example:
 	./notify.sh --pushover -s "Downtime Monitor" -m "http://www.yourdomain.com changed status to Offline, recording downtime!" -p 0
 	./notify.sh --glances -t "Title here" -m "Message line" -s "Subtext line" -c 57 --percent 99
 	./notify.sh --mailgun -s "Hello World" -m "Hello world email body example" -r "user@mail.com, seconduser@mail.com"
+	./notify.sh --slack -w "https://hooks.slack.com/services/T0..92/TB..33" -c "#notifications" -u "BOT SCRIPT" -m "Hello World"
 
 Python Example:
 
