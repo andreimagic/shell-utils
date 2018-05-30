@@ -22,6 +22,7 @@ Integrated with:
 		    -t|--title -m|--message -s|--subtext -c|--count -%|--percent
 		  --slack                                                   # push messages to Slack
 		    -w|--webhook -c|--channel -u|--username -m|--message
+				-p|--priority <good, warning, danger, HEX color value>
 		  -h|--help                                                 # display this help message
 
 		NOTE: Notification services credentials

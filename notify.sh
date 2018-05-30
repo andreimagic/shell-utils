@@ -75,14 +75,18 @@ function mailgun() {
     -F text="${mail_text}"
 }
 
-# Mailgun Notifications (multiple recipients comma separated)
+# Slack Notifications (using Incoming Webhooks)
 function slack() {
-    if [[ ! $slack_webhook ]] || [[ ! $slack_username ]] || [[ ! $slack_channel ]] || [[ ! $slack_text ]]; then
-        echo -e "All notification service parameters are mandatory!\n<slack_webhook, slack_channel, slack_username, slack_text>"
+    if [[ ! $slack_webhook ]] || [[ ! $slack_username ]] || [[ ! $slack_text ]]; then
+        echo -e "Mandatory notification service parameters:\n<slack_webhook, slack_username, slack_text>"
         exit 1
     fi
 
-    json="{\"channel\": \"$slack_channel\", \"username\":\"$slack_username\", \"icon_emoji\":\"ghost\", \"attachments\":[{\"color\":\"danger\" , \"text\": \"$slack_text\"}]}"
+    if  [[ ! $slack_channel ]]; then
+        json="{\"username\":\"$slack_username\", \"icon_emoji\":\"ghost\", \"attachments\":[{\"color\":\"$push_priority\" , \"text\": \"$slack_text\"}]}"
+    else
+        json="{\"channel\": \"$slack_channel\", \"username\":\"$slack_username\", \"icon_emoji\":\"ghost\", \"attachments\":[{\"color\":\"$push_priority\" , \"text\": \"$slack_text\"}]}"
+    fi
     curl --data "payload=$json" "$slack_webhook"
 }
 
@@ -97,6 +101,7 @@ function help() {
     printf "%-60s\n" "    -t|--title -m|--message -s|--subtext -c|--count -%|--percent"
     printf "%-60s%-30s\n" "  --slack" "# push messages to Slack"
     printf "%-60s\n" "    -w|--webhook -c|--channel -u|--username -m|--message"
+    printf "%-60s\n" "    -p|--priority <good, warning, danger, HEX color value>"
     printf "%-60s%-30s\n" "  -h|--help" "# display this help message"
     echo -e "\nNOTE: Notification services credentials\n<pushover_token, pushover_user, mailgun_key, mailgun_domain>"
     echo -e "must be declared using 'export variable=\"value\"' (or add them in the script header)"
