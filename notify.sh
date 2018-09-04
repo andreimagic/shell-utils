@@ -1,5 +1,4 @@
 #!/bin/bash
-version="SCript by AndreiMagic, last revision 19.12.2017"
 DATE=$(date)
 
 # Notification services credentials
@@ -77,17 +76,61 @@ function mailgun() {
 
 # Slack Notifications (using Incoming Webhooks)
 function slack() {
-    if [[ ! $slack_webhook ]] || [[ ! $slack_username ]] || [[ ! $slack_text ]]; then
-        echo -e "Mandatory notification service parameters:\n<slack_webhook, slack_username, slack_text>"
+    if [[ ! $webhook ]] || [[ ! $username ]] || [[ ! $push_text ]]; then
+        echo -e "Mandatory notification service parameters:\n<webhook, username, push_text>"
         exit 1
     fi
 
     if  [[ ! $slack_channel ]]; then
-        json="{\"username\":\"$slack_username\", \"icon_emoji\":\"ghost\", \"attachments\":[{\"color\":\"$push_priority\" , \"text\": \"$slack_text\"}]}"
+        json="{\"username\":\"$username\", \"icon_emoji\":\"ghost\", \"attachments\":[{\"color\":\"$push_priority\" , \"text\": \"$push_text\"}]}"
     else
-        json="{\"channel\": \"$slack_channel\", \"username\":\"$slack_username\", \"icon_emoji\":\"ghost\", \"attachments\":[{\"color\":\"$push_priority\" , \"text\": \"$slack_text\"}]}"
+        json="{\"channel\": \"$slack_channel\", \"username\":\"$username\", \"icon_emoji\":\"ghost\", \"attachments\":[{\"color\":\"$push_priority\" , \"text\": \"$push_text\"}]}"
     fi
-    curl --data "payload=$json" "$slack_webhook"
+    curl --data "payload=$json" "$webhook"
+}
+
+# Discord Notifications (using Webhooks)
+function discord() {
+    if [[ ! $webhook || ! $username ]]; then
+        echo -e "Mandatory notification service parameters:\n<webhook, username, push_text || embeds_text>"
+        exit 1
+    fi
+
+    # set color to white (in decimal value)
+    if [[ ! $push_priority ]]; then
+        push_priority="16777215"
+    else
+        case "$push_priority" in
+            good)
+                push_priority="65280"
+                ;;
+            warning)
+                push_priority="16744448"
+                ;;
+            danger)
+                push_priority="16711680"
+                ;;
+            *)
+                push_priority="16777215"
+                ;;
+        esac
+    fi
+
+    if  [[ $embeds_text ]]; then
+        curl -H "Content-Type: application/json" \
+        -X POST \
+        -d "{\"username\": \"$username\", \"content\": \"$push_text\", \
+        \"embeds\": [{\"title\": \"$embeds_title\", \"description\": \"$embeds_text\", \"color\": \"$push_priority\"}] }" \
+        $webhook
+    elif [[ $push_text ]]; then
+        curl -H "Content-Type: application/json" \
+        -X POST \
+        -d "{\"username\": \"$username\", \"content\": \"$push_text\"}" $webhook
+    else
+        echo -e "Mandatory notification service parameters:\n<webhook, username, push_text || embeds_text>"
+        exit 1
+    fi
+
 }
 
 function help() {
@@ -102,6 +145,9 @@ function help() {
     printf "%-60s%-30s\n" "  --slack" "# push messages to Slack"
     printf "%-60s\n" "    -w|--webhook -c|--channel -u|--username -m|--message"
     printf "%-60s\n" "    -p|--priority <good, warning, danger, HEX color value>"
+    printf "%-60s%-30s\n" "  --discord" "# push messages to Discord"
+    printf "%-60s\n" "    -w|--webhook -u|--username -m|--message -e|--embeds <message> "
+    printf "%-60s\n" "    -t|--title -p|--priority <good, warning, danger, decimal color value>"
     printf "%-60s%-30s\n" "  -h|--help" "# display this help message"
     echo -e "\nNOTE: Notification services credentials\n<pushover_token, pushover_user, mailgun_key, mailgun_domain>"
     echo -e "must be declared using 'export variable=\"value\"' (or add them in the script header)"
@@ -134,7 +180,7 @@ if (( $# >= 1 )); then
                 mail_text="$2"
                 push_text="$2"
                 glance_text="$2"
-                slack_text="$2"
+                push_text="$2"
                 shift # past argument
                 ;;
             -r|--recipients)
@@ -147,6 +193,7 @@ if (( $# >= 1 )); then
                 ;;
             -t|--title)
                 glance_title="$2"
+                embeds_title="$2"
                 shift # past argument
                 ;;
             -c|--count|--channel)
@@ -159,12 +206,16 @@ if (( $# >= 1 )); then
                 shift # past argument
                 ;;
             -u|--username)
-                slack_username="$2"
+                username="$2"
                 shift # past argument
                 ;;
             -w|--webhook)
-                slack_webhook="$2"
+                webhook="$2"
                 shift # past argument
+                ;;
+            -e|--embeds)
+                embeds_text="$2"
+                shift
                 ;;
             --mailgun)
                 run="mailgun"
@@ -177,6 +228,9 @@ if (( $# >= 1 )); then
                 ;;
             --slack)
                 run="slack"
+                ;;
+            --discord)
+                run="discord"
                 ;;
             -h|--help)
                 help

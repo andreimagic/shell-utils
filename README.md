@@ -7,23 +7,27 @@ Integrated with:
  * [Pushover Glances](https://pushover.net/api/glances) (for Apple Watch or Android)
  * [Mailgun](https://www.mailgun.com) for emails
  * [Slack](https://slack.com) messages using WebHooks
+ * [Discord](https://discordapp.com) messages using WebHooks
 
  ---
 
 
 		Useage: ./notify.sh option
 
-		  Options are:
-		  --mailgun                                                 # email
-		    -s|--subject -m|--message -r|--recipients
-		  --pushover                                                # push notification
-		    -s|--subject -m|--message -p|--priority
-		  --glances                                                 # push stats to watchOS
-		    -t|--title -m|--message -s|--subtext -c|--count -%|--percent
-		  --slack                                                   # push messages to Slack
-		    -w|--webhook -c|--channel -u|--username -m|--message
-				-p|--priority <good, warning, danger, HEX color value>
-		  -h|--help                                                 # display this help message
+		    Options are:
+				--mailgun                                                 # email
+					-s|--subject -m|--message -r|--recipients
+				--pushover                                                # push notification
+					-s|--subject -m|--message -p|--priority
+				--glances                                                 # push stats to watchOS
+					-t|--title -m|--message -s|--subtext -c|--count -%|--percent
+				--slack                                                   # push messages to Slack
+					-w|--webhook -c|--channel -u|--username -m|--message
+					-p|--priority <good, warning, danger, HEX color value>
+				--discord                                                 # push messages to Discord
+					-w|--webhook -u|--username -m|--message -e|--embeds <message>
+					-t|--title -p|--priority <good, warning, danger, decimal color value>
+				-h|--help                                                 # display this help message
 
 		NOTE: Notification services credentials
 		<pushover_token, pushover_user, mailgun_key, mailgun_domain>
@@ -35,6 +39,7 @@ Shell Example:
 	./notify.sh --glances -t "Title here" -m "Message line" -s "Subtext line" -c 57 --percent 99
 	./notify.sh --mailgun -s "Hello World" -m "Hello world email body example" -r "user@mail.com, seconduser@mail.com"
 	./notify.sh --slack -w "https://hooks.slack.com/services/T0..92/TB..33" -c "#notifications" -u "BOT SCRIPT" -m "Hello World"
+	./notify.sh --discord -w "https://discordapp.com/api/webhooks/.../..." -u "BOT SCRIPT" -m "Hello World"
 
 Python Example:
 
