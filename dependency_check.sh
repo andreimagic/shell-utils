@@ -1,4 +1,5 @@
 #!/bin/bash
+source add_color.sh
 
 ################ DEPENDENCIES CHECK ##################
 commands=(date cmatrix)
@@ -9,7 +10,7 @@ for cmd in "${commands[@]}"; do
     fi
 done
 if [ -n "$missingCmd" ]; then
-    echo -e $red"# Missing dependencies! (${missingCmd[@]})"$bold"\nThe script will not run properly."$fontreset
+    printf $red"# Missing dependencies! (${missingCmd[@]})"$bold"\nThe script will not run properly.\n"$fontreset
     exit 1
 fi
 ######################################################
