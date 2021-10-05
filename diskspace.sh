@@ -59,6 +59,7 @@ function diskspace {
     fi
 
     # build message and trigger notification
-    (( $priority == 1 )) && message="`echo -e "$(date)\nSERVER: $server\n\n$dmessage\n$imessage"`" && pushover
+    (( $priority == 1 )) && message="`echo -e "$(date)\nSERVER: $server\n\n$dmessage\n$imessage"`" && return 0
 }
-diskspace
+
+diskspace && pushover
